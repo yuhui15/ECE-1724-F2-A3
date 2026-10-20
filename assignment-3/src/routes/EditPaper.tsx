@@ -32,13 +32,20 @@ export default function EditPaper() {
     async function loadPaper() {
       try {
         // TODO: Fetch paper details from GET /api/papers/:id
+        const response = await fetch(`/api/papers/${id}`);
         // TODO: If status === 404, return without setting paper
+        if (response.status === 404) return;
         // TODO: If response is not ok, throw an Error
+        if (!response.ok) throw new Error("Failed to load paper");
         // TODO: Parse the response as Paper and setPaper(...)
+        const data: Paper = await response.json();
+        setPaper(data);
       } catch {
         // TODO: Set loadError to true
+        setLoadError(true);
       } finally {
         // TODO: Set loading to false
+        setLoading(false);
       }
     }
 
@@ -60,7 +67,9 @@ export default function EditPaper() {
     if (!updated) return;
 
     // TODO: Set a timeout to navigate("/") after 3000 ms
+    const timerId = window.setTimeout(() => navigate("/"), 3000);
     // TODO: Return a cleanup function that clears the timeout
+    return () => window.clearTimeout(timerId);
   }, [updated, navigate]);
 
   // TODO: Implement update behavior.
@@ -86,6 +95,7 @@ export default function EditPaper() {
     if (!paper || updated) return false;
 
     // TODO: Clear the previous message
+    setMessage(null);
 
     try {
       // TODO: Send PUT /api/papers/:id
@@ -101,19 +111,37 @@ export default function EditPaper() {
       //   headers: { "Content-Type": "application/json" },
       //   body: JSON.stringify(...),
       // });
+      const response = await fetch(`/api/papers/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...payload,
+          authors: paper.authors.map(({ name, email, affiliation }) => ({
+            name,
+            email,
+            affiliation,
+          })),
+        }),
+      });
       // TODO: If response is not ok, throw an Error
+      if (!response.ok) throw new Error("Failed to update paper");
       // TODO: Set message to "Paper updated successfully"
+      setMessage("Paper updated successfully");
       // TODO: Set updated to true
+      setUpdated(true);
       // TODO: Return true
+      return true;
     } catch {
       // TODO: Set message to "Error updating paper"
+      setMessage("Error updating paper");
       // TODO: Return false
+      return false;
     }
   }
 
-  if (loading) return <div>{/* TODO */}</div>;
-  if (loadError) return <div>{/* TODO */}</div>;
-  if (!paper) return <div>{/* TODO */}</div>;
+  if (loading) return <div>{/* TODO */}Loading paper details...</div>;
+  if (loadError) return <div>{/* TODO */}Error loading paper</div>;
+  if (!paper) return <div>{/* TODO */}Paper not found</div>;
 
   return (
     <div>
@@ -127,7 +155,7 @@ export default function EditPaper() {
       />
 
       {/* TODO: Show message in the DOM */}
-      {message && <div>{/* TODO */}</div>}
+      {message && <div>{/* TODO */}{message}</div>}
     </div>
   );
 }

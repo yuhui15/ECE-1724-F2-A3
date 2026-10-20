@@ -69,13 +69,19 @@ export default function PaperForm({
     async function loadAuthors() {
       try {
         // TODO: fetch("/api/authors")
+        const response = await fetch("/api/authors");
         // TODO: If response is not ok, throw an Error
+        if (!response.ok) throw new Error("Failed to load authors");
         // TODO: Parse JSON as AuthorsListResponse
+        const data: AuthorsListResponse = await response.json();
         // TODO: Set authors state using data.authors
+        setAuthors(data.authors);
       } catch {
         // TODO: Set authorError to true
+        setAuthorError(true);
       } finally {
         // TODO: Set loadingAuthors to false
+        setLoadingAuthors(false);
       }
     }
 
@@ -100,6 +106,7 @@ export default function PaperForm({
    */
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     // TODO: Prevent page reload
+    event.preventDefault();
 
     // Do not submit while submitting or locked.
     if (submitting || locked) return;
@@ -108,8 +115,21 @@ export default function PaperForm({
 
     // TODO: Implement validation in the required order.
     // Set validationError to the first applicable error message.
+    const year = Number(form.year);
+    if (form.title.trim() === "") {
+      validationError = "Title is required";
+    } else if (form.publishedIn.trim() === "") {
+      validationError = "Publication venue is required";
+    } else if (form.year.trim() === "") {
+      validationError = "Publication year is required";
+    } else if (!Number.isInteger(year) || year <= 1900) {
+      validationError = "Valid year after 1900 is required";
+    } else if (!paper && form.authorIds.length === 0) {
+      validationError = "Please select at least one author";
+    }
 
     // TODO: Set error state to validationError
+    setError(validationError);
     if (validationError) return;
 
     // TODO: Determine which authors to submit.
@@ -119,6 +139,9 @@ export default function PaperForm({
     // - Create mode: select authors whose IDs are in form.authorIds
     //
     // Hint: Use filter() and includes() in create mode.
+    const selectedAuthors: Author[] = paper
+      ? paper.authors
+      : authors.filter((author) => form.authorIds.includes(author.id));
 
     // TODO: Construct PaperPayload.
     //
@@ -131,16 +154,26 @@ export default function PaperForm({
       title: form.title,
       publishedIn: form.publishedIn,
       year,
-      authors: [], // TODO: Replace with mapped authors
+      authors: selectedAuthors.map(({ name, email, affiliation }) => ({
+        name,
+        email,
+        affiliation,
+      })), // TODO: Replace with mapped authors
     };
 
     // TODO: Set submitting to true
+    setSubmitting(true);
 
     try {
       // TODO: Call onSubmit(payload) and await its boolean result
+      const success = await onSubmit(payload);
       // TODO: If successful and in create mode, reset form to emptyForm
+      if (success && !paper) {
+        setForm(emptyForm);
+      }
     } finally {
       // TODO: Set submitting to false
+      setSubmitting(false);
     }
   }
 
@@ -151,9 +184,10 @@ export default function PaperForm({
       noValidate
       onSubmit={handleSubmit}
       /* TODO: Style with styles.form */
+      className={styles.form}
     >
       {/* TODO: Render validation error if present */}
-      {error && <div className="error">{/* TODO */}</div>}
+      {error && <div className="error">{/* TODO */}{error}</div>}
 
       <div>
         <label htmlFor="title">Title:</label>
@@ -161,10 +195,11 @@ export default function PaperForm({
           id="title"
           name="title"
           type="text"
-          value={/* TODO */}
-          disabled={/* TODO */}
+          value={/* TODO */ form.title}
+          disabled={/* TODO */ disabled}
           onChange={(event) => {
             // TODO: Update form.title using setForm
+            setForm((prev) => ({ ...prev, title: event.target.value }));
           }}
         />
       </div>
@@ -175,10 +210,11 @@ export default function PaperForm({
           id="publishedIn"
           name="publishedIn"
           type="text"
-          value={/* TODO */}
-          disabled={/* TODO */}
+          value={/* TODO */ form.publishedIn}
+          disabled={/* TODO */ disabled}
           onChange={(event) => {
             // TODO: Update form.publishedIn using setForm
+            setForm((prev) => ({ ...prev, publishedIn: event.target.value }));
           }}
         />
       </div>
@@ -189,11 +225,12 @@ export default function PaperForm({
           id="year"
           name="year"
           type="number"
-          value={/* TODO */}
-          disabled={/* TODO */}
+          value={/* TODO */ form.year}
+          disabled={/* TODO */ disabled}
           onChange={(event) => {
             // TODO: Update form.year using setForm
             // Note: Keep the input value as a string.
+            setForm((prev) => ({ ...prev, year: event.target.value }));
           }}
         />
       </div>
@@ -205,6 +242,7 @@ export default function PaperForm({
           <p className={styles.readOnlyText}>
             {/* TODO: Display paper authors' names, separated by ", " */}
             {/* Hint: Use map() and join() */}
+            {paper.authors.map((author) => author.name).join(", ")}
           </p>
         </div>
       ) : (
@@ -218,6 +256,7 @@ export default function PaperForm({
             selectedAuthorIds={form.authorIds}
             onChange={(authorIds) => {
               // TODO: Update form.authorIds using setForm
+              setForm((prev) => ({ ...prev, authorIds }));
             }}
           />
         </fieldset>
@@ -234,7 +273,7 @@ export default function PaperForm({
             - Clicking it should navigate back to "/"
         */}
         {paper && (
-          <button type="button" onClick={/* TODO */}>
+          <button type="button" onClick={/* TODO */ () => navigate("/")}>
             Cancel
           </button>
         )}

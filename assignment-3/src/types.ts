@@ -28,6 +28,11 @@ export type Paper = {
    *
    * Include only the fields needed by the frontend.
    */
+  id: number;
+  title: string;
+  publishedIn: string;
+  year: number;
+  authors: Author[];
 };
 
 // =====================
@@ -48,6 +53,10 @@ export type AuthorsListResponse = {
    *
    * Hint: Follow the structure of PapersListResponse.
    */
+  authors: Author[];
+  total: number;
+  limit: number;
+  offset: number;
 };
 
 // =====================

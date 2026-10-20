@@ -33,13 +33,19 @@ export default function Home() {
     async function loadPapers() {
       try {
         // TODO: Fetch papers from GET /api/papers
+        const response = await fetch("/api/papers");
         // TODO: If response is not ok, throw an Error
+        if (!response.ok) throw new Error("Failed to load papers");
         // TODO: Parse JSON as PapersListResponse
+        const data: PapersListResponse = await response.json();
         // TODO: Set papers state using data.papers
+        setPapers(data.papers);
       } catch {
         // TODO: Set loadError to true
+        setLoadError(true);
       } finally {
         // TODO: Set loading to false
+        setLoading(false);
       }
     }
 
@@ -61,6 +67,7 @@ export default function Home() {
   //   - Return false
   async function handleCreate(payload: PaperPayload): Promise<boolean> {
     // TODO: Clear previous message
+    setMessage(null);
 
     try {
       // TODO: Send POST /api/papers
@@ -71,15 +78,27 @@ export default function Home() {
       //   headers: { "Content-Type": "application/json" },
       //   body: JSON.stringify(...),
       // });
+      const response = await fetch("/api/papers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       // TODO: If response is not ok, throw an Error
+      if (!response.ok) throw new Error("Failed to create paper");
       // TODO: Parse response JSON as Paper
+      const created: Paper = await response.json();
       // TODO: Add the created paper to papers state
       // Hint: Use setPapers with a state updater function
+      setPapers((prev) => [...prev, created]);
       // TODO: Set message to "Paper created successfully"
+      setMessage("Paper created successfully");
       // TODO: Return true
+      return true;
     } catch {
       // TODO: Set message to "Error creating paper"
+      setMessage("Error creating paper");
       // TODO: Return false
+      return false;
     }
   }
 
@@ -99,8 +118,10 @@ export default function Home() {
     // Hint: Use confirm() with the following message:
     // `Are you sure you want to delete ${paper.title}?`
     // If the user cancels, return without deleting
+    if (!confirm(`Are you sure you want to delete ${paper.title}?`)) return;
 
     // TODO: Clear previous message
+    setMessage(null);
 
     try {
       // TODO: Send DELETE /api/papers/:id
@@ -109,32 +130,39 @@ export default function Home() {
       // const response = await fetch(`/api/papers/${paper.id}`, {
       //   method: "DELETE",
       // });
+      const response = await fetch(`/api/papers/${paper.id}`, {
+        method: "DELETE",
+      });
       // TODO: If response is not ok, throw an Error
+      if (!response.ok) throw new Error("Failed to delete paper");
       // TODO: Remove the deleted paper from papers state
       // Hint: Use setPapers with filter() to exclude paper.id
+      setPapers((prev) => prev.filter((p) => p.id !== paper.id));
       // TODO: Set message to "Paper deleted successfully"
+      setMessage("Paper deleted successfully");
     } catch {
       // TODO: Set message to "Error deleting paper"
+      setMessage("Error deleting paper");
     }
   }
 
   return (
-    <div /* TODO: Style with styles.container */>
-      <h1 /* TODO: Style with styles.title */>Paper Management System</h1>
+    <div /* TODO: Style with styles.container */ className={styles.container}>
+      <h1 /* TODO: Style with styles.title */ className={styles.title}>Paper Management System</h1>
 
       {/* TODO: Render success/error message if present */}
-      {message && <div>{/* TODO */}</div>}
+      {message && <div>{/* TODO */}{message}</div>}
 
-      <h2 /* TODO: Style with styles.sectionTitle */>Create New Paper</h2>
+      <h2 /* TODO: Style with styles.sectionTitle */ className={styles.sectionTitle}>Create New Paper</h2>
       <PaperForm onSubmit={handleCreate} />
 
-      <h2 /* TODO: Style with styles.sectionTitle */>Papers</h2>
+      <h2 /* TODO: Style with styles.sectionTitle */ className={styles.sectionTitle}>Papers</h2>
 
       {/* TODO: Show loading/error messages or the paper list */}
       {loading ? (
-        <div>{/* TODO */}</div>
+        <div>{/* TODO */}Loading papers...</div>
       ) : loadError ? (
-        <div>{/* TODO */}</div>
+        <div>{/* TODO */}Error loading papers</div>
       ) : (
         <PaperList papers={papers} onDelete={handleDelete} />
       )}
